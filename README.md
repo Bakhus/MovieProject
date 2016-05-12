@@ -1,10 +1,11 @@
 # MovieProject
 Data Science Class. Project 1
 Task
-1. 
-2.
-3.
-4.
+1. get the data (metacritics)
+2. join the data 
+3. investigate the mojo
+4. investigate the metacritics
+5.
 
 Ideas 
 1. look at distribution/ histogram
