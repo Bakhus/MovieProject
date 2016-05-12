@@ -13,4 +13,8 @@ def create_season(combined_df):
         else: 
             return 'christmas'
     combined_df['release_season'] = combined_df.apply(lambda x: month_to_season(x['release_date']), axis=1)
+    
+    combined_df.groupby('release_season')['domestic_gross'].mean().plot()
+    plt.title('Average domestic gross take')
+    plt.show()
     return combined_df
