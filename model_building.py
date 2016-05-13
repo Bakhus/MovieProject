@@ -138,24 +138,35 @@ def create_season(combined_df):
     plt.show()
     return combined_df
 
-#####
-df_csv = pd.read_csv('C:/Users/djl358/bdatabootcamp_proj1/MovieProject/Movie_Analysis.csv')
-df_csv = create_season(df_csv)
-df_csv = add_studios(df_csv)
-df_csv, genre_list = add_genre(df_csv)
+def plot_hist_boxplot(var_name, by_var_name, df):
+    df.loc[:,[var_name, by_var_name]].boxplot(by=[by_var_name])
+    plt.ylim([0, 3*10**8])
+    plt.show()
+    df_csv_fnl.groupby([by_var_name])[var_name].count().plot(kind='bar')
 
+def plot_corr(df,size=10):
+    '''Function plots a graphical correlation matrix for each pair of columns in the dataframe.
+
+    Input:
+        df: pandas DataFrame
+        size: vertical and horizontal size of the plot'''
+
+    corr = df.corr()
+    fig, ax = plt.subplots(figsize=(size, size))
+    ax.matshow(corr)
+    plt.xticks(range(len(corr.columns)), corr.columns);
+    plt.yticks(range(len(corr.columns)), corr.columns);
+###########################################################################
 df_csv_fnl = pd.read_csv('C:/Users/djl358/bdatabootcamp_proj1/MovieProject/Movie_Analysis_fnl.csv')
 df_csv_fnl = change_to_list_df(df_csv_fnl)
 
+# number of genre, indicator of genre of 3-6
 def genre_len_fun(x):
     if type(x)==list:
         return len(x)
 df_csv_fnl['genre_len'] = df_csv_fnl.apply(lambda x: genre_len_fun(x['genre']), axis=1)
 df_csv_fnl['genre_len'].fillna(0, inplace=True)
-df_csv_fnl.loc[:,['genre_len', 'domestic_gross']].boxplot(by=['genre_len'])
-plt.ylim([0, 3*10**8])
-plt.show()
-df_csv_fnl.groupby(['genre_len'])['domestic_gross'].count().plot(kind='bar')
+plot_hist_boxplot('domestic_gross', 'genre_len', df_csv_fnl)
 
 def genre_len_type_fun(x):
     if (x >= 3.0) and (x <= 6.0):
@@ -163,23 +174,14 @@ def genre_len_type_fun(x):
     else: 
         return 0
 df_csv_fnl['genre_num_3_6_ind'] = df_csv_fnl.apply(lambda x: genre_len_type_fun(x['genre_len']), axis = 1)
-df_csv_fnl.loc[:,['genre_num_3_6_ind', 'domestic_gross']].boxplot(by=['genre_num_3_6_ind'])
-plt.ylim([0, 2*10**8])
-plt.show()
+plot_hist_boxplot('domestic_gross', 'genre_num_3_6_ind', df_csv_fnl)
 
-df_csv_fnl.loc[:,['director_experience', 'domestic_gross']].boxplot(by=['director_experience'])
-plt.ylim([0, 3*10**8])
-plt.show()
-df_csv_fnl.groupby(['director_experience'])['domestic_gross'].count().plot(kind='bar')
-
+# director expierence 
 df_csv_fnl['director_experience'] = df_csv_fnl.apply(lambda x: min(x['director_experience'], 9), axis = 1)
+plot_hist_boxplot('domestic_gross', 'director_experience', df_csv_fnl)
 
-
-df_csv_fnl.loc[:,['rating', 'domestic_gross']].boxplot(by=['rating'])
-plt.ylim([0, 3*10**8])
-plt.xticks(rotation='vertical')
-plt.show()
-df_csv_fnl.groupby(['rating'])['domestic_gross'].count().plot(kind='bar')
+# rating indicator
+plot_hist_boxplot('domestic_gross', 'rating', df_csv_fnl)
 
 grouped_pg_rtng = [
 'PG-13',
@@ -192,7 +194,6 @@ grouped_pg_rtng = [
 'TV-G'
 ]
 
-
 def rating_new_fun(x):
     if x in grouped_pg_rtng:
         return 1
@@ -200,18 +201,10 @@ def rating_new_fun(x):
         return 0
 df_csv_fnl['rtng_PG_ind']=df_csv_fnl.apply(lambda x: rating_new_fun(x['rating']),axis=1)
 
-df_csv_fnl.loc[:,['rtng_PG_ind', 'domestic_gross']].boxplot(by=['rtng_PG_ind'])
-plt.ylim([0, 3*10**8])
-plt.show()
-df_csv_fnl.groupby(['rtng_PG_ind'])['domestic_gross'].count().plot(kind='bar')
+plot_hist_boxplot('domestic_gross', 'rtng_PG_ind', df_csv_fnl)
 
-def plot_hist_boxplot(var_name, by_var_name, df):
-    df.loc[:,[var_name, by_var_name]].boxplot(by=[by_var_name])
-    plt.ylim([0, 3*10**8])
-    plt.show()
-    df_csv_fnl.groupby([by_var_name])[var_name].count().plot(kind='bar')
     
-
+# season indicator
 def season_ind_fun(x):
     if x in ['summer', 'christmas']:
         return 1
@@ -222,8 +215,11 @@ df_csv_fnl['season_ind']=df_csv_fnl.apply(lambda x: season_ind_fun(x['release_se
 plot_hist_boxplot('domestic_gross', 'season_ind', df_csv_fnl)
 
 df_csv_fnl['release_ind'] = df_csv_fnl.apply(lambda x: 1 if np.isnan(x['widest_release']) else 0, axis=1)
+
+# widest release 
 df_csv_fnl['wide_release_log'] = np.log(df_csv_fnl['widest_release']+1)
 
+df_csv_fnl.to_csv('C:/Users/djl358/bdatabootcamp_proj1/MovieProject/Movie_Analysis_fnlfnl.csv')
 
 num_predictor = [
 'wide_release_log',
@@ -233,6 +229,8 @@ num_predictor = [
 'rtng_PG_ind'
 ]
 df_for_reg = df_csv_fnl[num_predictor+['l_title', 'domestic_gross']]
+df_for_reg.drop(['l_title'], axis=1).to_csv('C:/Users/djl358/bdatabootcamp_proj1/MovieProject/model_fit.csv')
+
 # correlation matrix plot
 plt.matshow(df_for_reg.corr())
 plot_corr(df_for_reg)
@@ -253,6 +251,14 @@ print linmodel.summary()
 plt.scatter(y, linmodel.resid)
 plt.scatter(y, linmodel.fittedvalues)
 
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble.partial_dependence import plot_partial_dependence
+from sklearn.ensemble.partial_dependence import partial_dependence
+
+clf = GradientBoostingRegressor(n_estimators=100, max_depth=4,learning_rate=0.1)
+clf.fit(X = df_for_reg[num_predictor], y = df_for_reg['domestic_gross'])                                
+fig, axs = plot_partial_dependence(clf, df_for_reg[num_predictor], [0], feature_names='wide_release_log',
+                                   grid_resolution=50)
 
 
 for item in num_predictor:
@@ -261,18 +267,6 @@ for item in num_predictor:
     plt.show()
 
 
-def plot_corr(df,size=10):
-    '''Function plots a graphical correlation matrix for each pair of columns in the dataframe.
-
-    Input:
-        df: pandas DataFrame
-        size: vertical and horizontal size of the plot'''
-
-    corr = df.corr()
-    fig, ax = plt.subplots(figsize=(size, size))
-    ax.matshow(corr)
-    plt.xticks(range(len(corr.columns)), corr.columns);
-    plt.yticks(range(len(corr.columns)), corr.columns);
 
 
 
